@@ -18,6 +18,17 @@ function getContext(canvas: HTMLCanvasElement) {
   return context;
 }
 
+function toBuffer(dataview: any, metadata: any) {
+  switch (metadata.dtype) {
+    case 'int32':
+      return new Int32Array(dataview.buffer);
+      break;
+    default:
+      throw 'Unknown dtype ' + metadata.dtype;
+      break;
+  }
+}
+
 
 export
 class CanvasModel extends DOMWidgetModel {
@@ -76,6 +87,9 @@ class CanvasModel extends DOMWidgetModel {
       case 'putImageData':
         this.putImageData(command.args, buffers);
         break;
+      case 'fillRects':
+        this.fillRects(command.args, buffers);
+        break;
       case 'set':
         this.setAttr(command.attr, command.value);
         break;
@@ -104,6 +118,22 @@ class CanvasModel extends DOMWidgetModel {
     getContext(offscreenCanvas).putImageData(imageData, 0, 0);
 
     this.ctx.drawImage(offscreenCanvas, dx, dy);
+  }
+
+  private fillRects(args: any[], buffers: any) {
+    const [xMetadata, yMetadata, widthMetadata, heightMetadata] = args;
+    const [xBufferView, yBufferView, widthBufferView, heightBufferView] = buffers;
+
+    const xBuffer = toBuffer(xBufferView, xMetadata);
+    const yBuffer = toBuffer(yBufferView, yMetadata);
+    const widthBuffer = toBuffer(widthBufferView, widthMetadata);
+    const heightBuffer = toBuffer(heightBufferView, heightMetadata);
+
+    const numberRects = xBuffer.length;
+
+    for (let idx = 0; idx < numberRects; ++idx) {
+      this.ctx.fillRect(xBuffer[idx], yBuffer[idx], widthBuffer[idx], heightBuffer[idx]);
+    }
   }
 
   private setAttr(attr: string, value: any) {

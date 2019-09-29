@@ -14,7 +14,7 @@ from ipywidgets import Color, DOMWidget, widget_serialization
 
 from ._frontend import module_name, module_version
 
-from .binary import array_to_binary
+from .binary import binary_image, array_to_binary
 
 
 def to_camel_case(snake_str):
@@ -111,6 +111,24 @@ class Canvas(DOMWidget):
     def fill_rect(self, x, y, width, height):
         """Draw a filled rectangle of size ``(width, height)`` at the ``(x, y)`` position."""
         self._send_canvas_command('fillRect', (x, y, width, height))
+
+    def fill_rects(self, x, y, width, height):
+        """Draw filled rectangles of size ``(width, height)`` at the ``(x, y)`` position.
+
+        Where ``x``, ``y``, ``width`` and ``height`` arguments are NumPy arrays.
+        """
+        x_metadata, x_buffer = array_to_binary(x)
+        y_metadata, y_buffer = array_to_binary(y)
+        width_metadata, width_buffer = array_to_binary(width)
+        height_metadata, height_buffer = array_to_binary(height)
+
+        # TODO Validate shapes
+
+        self._send_canvas_command(
+            'fillRects',
+            (x_metadata, y_metadata, width_metadata, height_metadata),
+            (x_buffer, y_buffer, width_buffer, height_buffer)
+        )
 
     def stroke_rect(self, x, y, width, height):
         """Draw a rectangular outline of size ``(width, height)`` at the ``(x, y)`` position."""
@@ -223,8 +241,8 @@ class Canvas(DOMWidget):
         draw. Unlike the CanvasRenderingContext2D.putImageData method, this method **is** affected by the canvas transformation
         matrix, and supports transparency.
         """
-        shape, image_buffer = array_to_binary(image_data)
-        self._send_canvas_command('putImageData', ({'shape': shape}, dx, dy), (image_buffer, ))
+        image_metadata, image_buffer = binary_image(image_data)
+        self._send_canvas_command('putImageData', (image_metadata, dx, dy), (image_buffer, ))
 
     def create_image_data(self, width, height):
         """Create a NumPy array of shape (width, height, 4) representing a table of pixel colors."""

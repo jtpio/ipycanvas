@@ -2,8 +2,8 @@
 import numpy as np
 
 
-def array_to_binary(ar):
-    """Turn a NumPy array into a binary buffer."""
+def binary_image(ar):
+    """Turn a NumPy array representing an array of pixels into a binary buffer."""
     if ar is None:
         return None
     if ar.dtype != np.uint8:
@@ -23,4 +23,15 @@ def array_to_binary(ar):
         ar = add_alpha
     if not ar.flags["C_CONTIGUOUS"]:  # make sure it's contiguous
         ar = np.ascontiguousarray(ar, dtype=np.uint8)
-    return ar.shape, memoryview(ar)
+    return {'shape': ar.shape, 'dtype': str(ar.dtype)}, memoryview(ar)
+
+
+def array_to_binary(ar):
+    """Turn a NumPy array into a binary buffer."""
+    if ar is None:
+        return None
+    if ar.dtype == np.int64:
+        ar = ar.astype(np.int32)
+    if not ar.flags["C_CONTIGUOUS"]:  # make sure it's contiguous
+        ar = np.ascontiguousarray(ar)
+    return {'shape': ar.shape, 'dtype': str(ar.dtype)}, memoryview(ar)
